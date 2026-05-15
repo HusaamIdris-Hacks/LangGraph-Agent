@@ -1,0 +1,107 @@
+{
+  "$defs": {
+    "ArticleModel": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "source_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Source Url",
+          "type": "string"
+        },
+        "thumbnail_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Thumbnail Url"
+        }
+      },
+      "required": [
+        "title",
+        "summary",
+        "source_url"
+      ],
+      "title": "ArticleModel",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "layout_type": {
+      "enum": [
+        "Hero",
+        "Grid",
+        "List"
+      ],
+      "title": "Layout Type",
+      "type": "string"
+    },
+    "articles": {
+      "items": {
+        "$ref": "#/$defs/ArticleModel"
+      },
+      "title": "Articles",
+      "type": "array"
+    },
+    "run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Run Id"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    },
+    "phase": {
+      "anyOf": [
+        {
+          "enum": [
+            "fetch_news",
+            "curate_content",
+            "determine_layout"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Phase"
+    }
+  },
+  "required": [
+    "layout_type",
+    "articles"
+  ],
+  "title": "NewsStateModel",
+  "type": "object"
+}

@@ -1,26 +1,99 @@
 # LangGraph Agent
 
-Personal learning repo for building agents with **LangGraph**, **LangChain**, and **Google Gemini**. Examples progress from a simple tool-calling agent to a small reflection loop implemented as a state graph.
+State-driven tech news app built with **LangGraph**, **FastAPI**, **Gemini**, and **Next.js**.
 
-## Contents
+## Stack
 
-| Path | Description |
-|------|-------------|
-| `1_Introduction/react_agent_basic.py` | Minimal agent using LangChain’s `create_agent` with Gemini and Tavily search. |
-| `2_basic_reflection_system/` | **Generate → reflect → generate** loop built with `StateGraph`, conditional edges, and message state. |
+- **Backend:** LangGraph + FastAPI
+- **Frontend:** Next.js App Router + React 19
+- **Contract validation:** Pydantic (Python) + Zod (TypeScript)
 
-## Prerequisites
+## Backend Overview
 
-- Python 3.11+ (matches the project’s `venv`)
-- A [Google AI Studio](https://aistudio.google.com/) API key (Gemini)
-- A [Tavily](https://www.tavily.com/) API key (for the intro agent’s search tool)
+- Graph workflow: `fetch_news -> curate_content -> determine_layout`
+- Graph state schema:
+  - `layout_type`: `"Hero" | "Grid" | "List"`
+  - `articles`: list of `{ title, summary, source_url, thumbnail_url? }`
+  - metadata: `run_id`, `updated_at`, `phase`
+- Streaming endpoint: `POST /api/news/stream`
+- Stream format: NDJSON with event envelopes:
+  - `state_update`
+  - `error`
+  - `done`
 
-## Setup
+Key files:
 
-1. **Clone the repo** (do not commit secrets; `.env` is gitignored).
+- `models.py` - typed state and Pydantic contracts
+- `graph.py` - StateGraph nodes, Gemini news agent, Tavily tool, and compiled graph
+- `api/streaming.py` - `astream_events` bridge and stream validation
+- `api/routes.py` - FastAPI endpoint
+- `contracts/news_state.schema.json` - exported JSON schema artifact
 
-2. **Create and activate a virtual environment** (recommended):
+## Environment
 
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate   # Windows: venv\Scripts\activate
+Create a local `.env` file in the repository root:
+
+```env
+GOOGLE_API_KEY=your_google_ai_studio_api_key
+TAVILY_API_KEY=your_tavily_api_key
+# Optional; defaults to gemini-2.5-flash
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+`fetch_news` uses Gemini as a tech-news agent and exposes Tavily search as its tool. Gemini selects the query and returns structured articles that match the renderer contract. If `GOOGLE_API_KEY` is missing, the backend uses Tavily directly. If `TAVILY_API_KEY` is missing or Tavily is unavailable, the backend falls back to sample articles so the UI remains usable during local development.
+
+## Frontend Overview
+
+The `frontend/` app includes:
+
+- `src/lib/news-schema.ts` - Zod contract for backend stream events
+- `src/lib/useNewsStream.ts` - NDJSON streaming hook
+- `src/components/layouts/*` - `Hero`, `Grid`, and `List` renderers
+- `src/components/NewsRenderer.tsx` - layout discriminator renderer
+- `src/app/page.tsx` - App Router page consuming stream updates in real time
+
+## Run Backend
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+Then stream:
+
+```bash
+curl -N -X POST http://localhost:8000/api/news/stream -H "Content-Type: application/json" -d "{}"
+```
+
+## Run Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Set `NEXT_PUBLIC_NEWS_STREAM_URL` if your API is not at `http://localhost:8000/api/news/stream`.
+
+## Contract Validation
+
+Python tests:
+
+```bash
+PYTHONPATH=. pytest tests
+```
+
+Frontend schema tests:
+
+```bash
+cd frontend
+npm run test:schema
+```
+
+Regenerate schema artifact:
+
+```bash
+python3 scripts/export_schema.py
+```

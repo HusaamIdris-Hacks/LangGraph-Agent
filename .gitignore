@@ -5,6 +5,7 @@
 
 # Python
 __pycache__/
+.pytest_cache/
 *.py[cod]
 *$py.class
 *.so
@@ -17,3 +18,8 @@ env/
 .DS_Store
 .idea/
 .vscode/
+
+# Frontend
+node_modules/
+.next/
+out/
